@@ -1,0 +1,366 @@
+## 1. Libraries & Options
+suppressPackageStartupMessages({
+  library(alphavantager)
+  library(fda)
+  library(refund)
+  library(dplyr)
+  library(tidyverse)
+  library(ghcm)
+  library(lubridate)
+  library(reshape2)
+  library(patchwork)
+  library(pracma)
+})
+
+# Remove scientific notation
+options(scipen = 999) #reverse action is scipen = 0
+
+
+## 2. Alphavantage key
+av_api_key("")
+
+## 3. Data
+# Loading ticker list
+tickers <- read.table("",
+                      header = FALSE)
+
+# Creating a random draw of five tickers (a maximum of 5 draws per minute)
+random_tickers <- as.data.frame((sample(t(tickers),50)))
+
+# Getting two years of data for market (VOO)
+
+# Manual slice list
+{
+slice_list_y1_1_month01_05 <- c("year1month1",
+                "year1month2",
+                "year1month3",
+                "year1month4",
+                "year1month5")
+
+slice_list_y1_1_month06_10 <- c("year1month6",
+                            "year1month7",
+                            "year1month8",
+                            "year1month9",
+                            "year1month10")
+
+slice_list_y1_2_month11_03 <- c("year1month11",
+                             "year1month12",
+                             "year2month1",
+                             "year2month2",
+                             "year2month3")
+
+slice_list_y2_2_month04_08 <- c("year2month4",
+                                "year2month5",
+                                "year2month6",
+                                "year2month7",
+                                "year2month8")
+
+slice_list_y2_2_month09_11 <- c("year2month9",
+                                "year2month10",
+                                "year2month11")
+}
+# Looping through slice list
+{
+mkt_2y_1 <- list()
+
+for (i in slice_list_y1_1_month01_05){
+  
+mkt_2y_1[[i]] <- av_get(symbol = "VOO", av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+              interval = "1min", outputsize = "full",slice = i)
+}
+
+Sys.sleep(65)
+
+mkt_2y_2 <- list()
+
+for (i in slice_list_y1_1_month06_10){
+  
+  mkt_2y_2[[i]] <- av_get(symbol = "VOO", av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                   interval = "1min", outputsize = "full",slice = i)
+}
+
+Sys.sleep(65)
+
+mkt_2y_3 <- list()
+
+for (i in slice_list_y1_2_month11_03){
+  
+  mkt_2y_3[[i]] <- av_get(symbol = "VOO", av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                   interval = "1min", outputsize = "full",slice = i)
+}
+
+Sys.sleep(65)
+
+mkt_2y_4 <- list()
+
+for (i in slice_list_y2_2_month04_08){
+  
+  mkt_2y_4[[i]] <- av_get(symbol = "VOO", av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                   interval = "1min", outputsize = "full",slice = i)
+}
+
+Sys.sleep(65)
+
+mkt_2y_5 <- list()
+
+for (i in slice_list_y2_2_month09_11){
+  
+  mkt_2y_5[[i]] <- av_get(symbol = "VOO", av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                   interval = "1min", outputsize = "full",slice = i)
+}
+}
+# Appending market data in order to create one data frame
+{
+mkt_2y <- rbind(mkt_2y_1[[1]],
+                mkt_2y_1[[2]],
+                mkt_2y_1[[3]],
+                mkt_2y_1[[4]],
+                mkt_2y_1[[5]],
+                mkt_2y_2[[1]],
+                mkt_2y_2[[2]],
+                mkt_2y_2[[3]],
+                mkt_2y_2[[4]],
+                mkt_2y_2[[5]],
+                mkt_2y_3[[1]],
+                mkt_2y_3[[2]],
+                mkt_2y_3[[3]],
+                mkt_2y_3[[4]],
+                mkt_2y_3[[5]],
+                mkt_2y_4[[1]],
+                mkt_2y_4[[2]],
+                mkt_2y_4[[3]],
+                mkt_2y_4[[4]],
+                mkt_2y_4[[5]],
+                mkt_2y_5[[1]],
+                mkt_2y_5[[2]],
+                mkt_2y_5[[3]])
+
+}
+
+# System sleep in order to run entire code as one chunk
+Sys.sleep(65)
+
+# Data manipulation of stock tickers
+
+df_tickers_1 <- list()
+df_tickers_2 <- list()
+df_tickers_3 <- list()
+df_tickers_4 <- list()
+df_tickers_5 <- list()
+
+start_time <- Sys.time()
+for (i in random_tickers[,1]){
+    for (j in slice_list_y1_1_month01_05){ 
+      df_tickers_1[[paste0("symbol ",i, ", slice ", j)]] <-  av_get(symbol = i, av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                 interval = "1min", outputsize = "full", slice = j)
+    }
+  Sys.sleep(65)
+  for (j in slice_list_y1_1_month06_10){
+    df_tickers_2[[paste0("symbol ",i, ", slice ", j)]] <- av_get(symbol = i, av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                                interval = "1min", outputsize = "full", slice = j)
+    
+  }
+  Sys.sleep(65)
+  for (j in slice_list_y1_2_month11_03){
+    df_tickers_3[[paste0("symbol ",i, ", slice ", j)]] <- av_get(symbol = i, av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                                interval = "1min", outputsize = "full", slice = j)
+  }
+  Sys.sleep(65)
+  for (j in slice_list_y2_2_month04_08){
+    df_tickers_4[[paste0("symbol ",i, ", slice ", j)]] <- av_get(symbol = i, av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                                interval = "1min", outputsize = "full", slice = j)
+  
+  }
+  Sys.sleep(65)
+  for (j in slice_list_y2_2_month09_11)
+    df_tickers_5[[paste0("symbol ",i, ", slice ", j)]] <- av_get(symbol = i, av_fun = "TIME_SERIES_INTRADAY_EXTENDED", 
+                                interval = "1min", outputsize = "full", slice = j)
+  Sys.sleep(65)
+}
+end_time <- Sys.time()
+end_time - start_time
+
+# Appending stock ticker data
+
+df_tickers <- list()
+
+# Appending loop
+
+for (i in random_tickers[,1])
+{
+  df_tickers[[i]] <- rbind(df_tickers_1[[paste0("symbol ",i,", slice year1month1")]],
+                           df_tickers_1[[paste0("symbol ",i,", slice year1month2")]],
+                           df_tickers_1[[paste0("symbol ",i,", slice year1month3")]],
+                           df_tickers_1[[paste0("symbol ",i,", slice year1month4")]],
+                           df_tickers_1[[paste0("symbol ",i,", slice year1month5")]],
+                           df_tickers_2[[paste0("symbol ",i,", slice year1month6")]],
+                           df_tickers_2[[paste0("symbol ",i,", slice year1month7")]],
+                           df_tickers_2[[paste0("symbol ",i,", slice year1month8")]],
+                           df_tickers_2[[paste0("symbol ",i,", slice year1month9")]],
+                           df_tickers_2[[paste0("symbol ",i,", slice year1month10")]],
+                           df_tickers_3[[paste0("symbol ",i,", slice year1month11")]],
+                           df_tickers_3[[paste0("symbol ",i,", slice year1month12")]],
+                           df_tickers_3[[paste0("symbol ",i,", slice year2month1")]],
+                           df_tickers_3[[paste0("symbol ",i,", slice year2month2")]],
+                           df_tickers_3[[paste0("symbol ",i,", slice year2month3")]],
+                           df_tickers_4[[paste0("symbol ",i,", slice year2month4")]],
+                           df_tickers_4[[paste0("symbol ",i,", slice year2month5")]],
+                           df_tickers_4[[paste0("symbol ",i,", slice year2month6")]],
+                           df_tickers_4[[paste0("symbol ",i,", slice year2month7")]],
+                           df_tickers_4[[paste0("symbol ",i,", slice year2month8")]],
+                           df_tickers_5[[paste0("symbol ",i,", slice year2month9")]],
+                           df_tickers_5[[paste0("symbol ",i,", slice year2month10")]],
+                           df_tickers_5[[paste0("symbol ",i,", slice year2month11")]])
+}
+
+## 4. Analysis
+
+# Converting prices to intraday cumulative returns
+convert_to_cum <- function(df) {
+  
+  df_returns <- df[nrow(df):1,] %>%
+    mutate(date=as.Date(time), 
+           minute=hour(time)*60+minute(time),
+           date_id = as.numeric(as.factor(date)))
+  
+  first_close <- df_returns %>% 
+    group_by(date_id) %>% 
+    slice_min(minute) %>% 
+    dplyr::select(close)
+  
+  df_returns$cum_returns <- ((df_returns$close - first_close[df_returns$date_id, 2])/
+                               (first_close[df_returns$date_id, 2]))[,1]
+  return(df_returns)
+}
+
+# convert_to_cum function when there are missing observations, e.g., BRK.B
+ee <- function (i) {
+  return(tryCatch(convert_to_cum(i), error=function(ee) NULL))
+}
+
+# Applying convert_to_cum function on all tickers in df_tickers
+df_tickers_for_use <- list(lapply(df_tickers,ee))
+
+# Creating single data frames of all stocks
+
+# Market (VOO) data frame
+mkt_df <- convert_to_cum(mkt_2y)
+
+# Functional Data Analysis (FDA) - Capital Asset Pricing Model (CAPM)
+
+fda_regression <- function(df_Y, df_X){
+  fda_Y <- df_Y[c("date_id", "minute", "cum_returns")]
+  Y <- fda_Y
+  colnames(Y) <-  c(".obs", ".index", ".value")
+  
+  fda_X <- df_X[c("date_id", "minute", "cum_returns")]
+  X <- fda_X
+  colnames(X) <- c(".obs", ".index", ".value")
+  
+  W <- X
+  W$var <- "X"
+  tmp <- Y
+  tmp$var <- "Y"
+  W <- rbind(W, tmp)
+  
+  tmp <- xtabs(.value ~ .obs + .index + var, data=W)
+  tmp2 <- ifelse(tmp == 0, NA, tmp)
+  X_df <- data.frame(.obs=1:length(unique(X$.obs)))
+  X_df$X <- tmp2[,,1]
+  X_df$Y <- tmp2[,,2]
+  
+  return(m_pffr <- pffr(Y ~ c(X), data=X_df))
+} 
+
+null_fda_regression <- function (df_Y,df_X) {
+  return(tryCatch(fda_regression(df_Y, df_X), error=function(null_fda_regression) NULL))
+}
+
+## Linear Regression - Capital Asset Pricing Model (CAPM)
+linear_regression <- function(df_Y,df_X){
+  Y <- pull((df_Y %>% group_by(date) %>% slice_max(minute))["cum_returns"])
+  X <- pull((df_X %>% group_by(date) %>% slice_max(minute))["cum_returns"])[1:length(Y)]
+  return(m_lm <- lm(Y ~ X))
+}
+
+null_linear_regression <- function (df_Y,df_X) {
+  return(tryCatch(linear_regression(df_Y, df_X), error=function(null_linear_regression) NULL))
+}
+
+# Mean Squared Prediction Error (MSPE)
+
+# Training data
+
+df_tickers_for_use_train <- list()
+
+ltest <- random_tickers[-4,1]
+#ltest <- ltest[:1]
+
+# Loop specifies percentage of total data that is used as training 
+# change training_coef to decide percentage
+
+training_coef <- 0.8
+
+for(i in ltest){
+  df_tickers_for_use_train[[paste0("symbol ",i)]] <- df_tickers_for_use[[1]][[i]][1:as.numeric((round(nrow(df_tickers_for_use[[1]][[i]])*training_coef))),]
+}
+
+# Creating MSPE data frame
+
+mspe_df <- list() # Pre-list
+
+for (i in ltest)
+{
+  mspe_df[[paste0("symbol ",i)]] <- merge(mkt_df[,c("date_id", "minute", "cum_returns")],
+                                          df_tickers_for_use_train[[paste0("symbol ",i)]][,c("date_id", "minute", "cum_returns")],
+                                          by=c("date_id", "minute"),
+                                          suffixes = c("_mkt", "_stock"))
+
+  # Including predictions in data frame
+  # Linear - EOD
+  
+  lin_pred <- null_linear_regression(df_tickers_for_use_train[[paste0("symbol ",i)]],mkt_df)
+  try(mspe_df[[paste0("symbol ",i)]]$preds_eod <- predict(lin_pred, data.frame(X=mspe_df[[paste0("symbol ",i)]]$cum_returns_mkt)))
+  mspe_df[[paste0("symbol ",i)]]$alpha_eod <- coef(lin_pred)[1]
+  mspe_df[[paste0("symbol ",i)]]$beta_eod <- coef(lin_pred)[2]
+ 
+  # Linear - Full
+  
+  try(lin_pred_full <- lm(cum_returns_stock ~ cum_returns_mkt, data=mspe_df[[paste0("symbol ",i)]]))
+  try(mspe_df[[paste0("symbol ",i)]]$preds_full <- predict(lin_pred_full, data.frame(cum_returns_mkt=mspe_df[[paste0("symbol ",i)]]$cum_returns_mkt)))
+  mspe_df[[paste0("symbol ",i)]]$alpha_full <- coef(lin_pred_full)[1]
+  mspe_df[[paste0("symbol ",i)]]$beta_full <- coef(lin_pred_full)[2]
+  
+  # FDA
+  try(fda_pred <- null_fda_regression(df_tickers_for_use_train[[paste0("symbol ",i)]], mkt_df))
+  mspe_df[[paste0("symbol ",i)]]$beta_fda <- try(beta_fda <- summary(fda_pred)$p.table[2, 1])
+  mspe_df[[paste0("symbol ",i)]]$alpha_fda <- try(alpha_fda <- summary(fda_pred)$p.table[1, 1])
+  try(mspe_df[[paste0("symbol ",i)]]$preds_fda <- alpha_fda + beta_fda*mspe_df[[paste0("symbol ",i)]]$cum_returns_mkt)
+  
+}
+
+mspe_df_train <- list()
+
+for (i in ltest){
+  
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_fda <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_fda <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_fda"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_fda"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_fda_minus_yhat_fda_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_fda - mspe_df_train[[paste0("symbol ",i)]]$yhat_fda)^2
+  mspe_df_train[[paste0("symbol ",i)]]$fda_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_fda_minus_yhat_fda_squared)*100
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_full <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_full <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_full"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_full"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_full_minus_yhat_full_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_full - mspe_df_train[[paste0("symbol ",i)]]$yhat_full)^2
+  mspe_df_train[[paste0("symbol ",i)]]$full_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_full_minus_yhat_full_squared)*100
+  
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_eod <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_eod <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_eod"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_eod"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_eod_minus_yhat_eod_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_eod - mspe_df_train[[paste0("symbol ",i)]]$yhat_eod)^2
+  mspe_df_train[[paste0("symbol ",i)]]$eod_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_eod_minus_yhat_eod_squared)*100
+  
+
+}
+
+
