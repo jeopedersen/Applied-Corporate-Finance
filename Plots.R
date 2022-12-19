@@ -140,8 +140,9 @@ plot3 <-ggplot() +
     data = gather(betas_for_figure, measure, value, -cat),
     aes(value, cat, color = measure), 
     size = 3,
-  ) + scale_color_manual(values = c("FFM" = "skyblue2", "SLM" = "orange1", "FSLM" = "green4")) +
-    x = expression(paste(beta,"-value")), y = NULL,
+  ) + scale_color_manual(values = c("FFM" = "skyblue2", "SLM" = "orange1", "FSLM" = "green4")) + #ÆNDR NAVNE SÅ DE MATCHER TIDLIGERE DEFINITION HER
+  labs(
+    x = "Beta-value", y = NULL,
   ) +
   theme_bw() +
   theme(legend.position = c(.9,.8875), legend.title = element_blank(), legend.text=element_text(size=12), axis.title = element_text(size = 12),
@@ -192,3 +193,85 @@ pander(t.test(beta_diff_full_eod))
 
 colMeans(boxplot_df
          )
+
+# Figure 5 - MSPE plot
+
+mspe_df_train <- list()
+mspe_fda <- list()
+mspe_full <- list()
+mspe_eod <- list()
+
+for (i in r_tickers){
+  
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_fda <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_fda <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_fda"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_fda"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_fda_minus_yhat_fda_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_fda - mspe_df_train[[paste0("symbol ",i)]]$yhat_fda)^2
+  mspe_df_train[[paste0("symbol ",i)]]$fda_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_fda_minus_yhat_fda_squared)*100
+  mspe_fda[[paste0("symbol ",i)]]$fda_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_fda_minus_yhat_fda_squared)*100
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_full <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_full <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_full"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_full"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_full_minus_yhat_full_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_full - mspe_df_train[[paste0("symbol ",i)]]$yhat_full)^2
+  mspe_df_train[[paste0("symbol ",i)]]$full_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_full_minus_yhat_full_squared)*100
+  mspe_full[[paste0("symbol ",i)]]$full_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_full_minus_yhat_full_squared)*100
+  
+  mspe_df_train[[paste0("symbol ",i)]]$y_eod <- df_tickers_for_use[[1]][[i]]["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]
+  mspe_df_train[[paste0("symbol ",i)]]$yhat_eod <- (colMeans(mspe_df[[paste0("symbol ",i)]]["alpha_eod"])+colMeans(mspe_df[[paste0("symbol ",i)]]["beta_eod"])*(mkt_df["cum_returns"][dim(df_tickers_for_use_train[[paste0("symbol ",i)]]["cum_returns"])[1]:nrow(df_tickers_for_use[[1]][[i]]["cum_returns"]),]))
+  mspe_df_train[[paste0("symbol ",i)]]$y_eod_minus_yhat_eod_squared <- (mspe_df_train[[paste0("symbol ",i)]]$y_eod - mspe_df_train[[paste0("symbol ",i)]]$yhat_eod)^2
+  mspe_df_train[[paste0("symbol ",i)]]$eod_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_eod_minus_yhat_eod_squared)*100
+  mspe_eod[[paste0("symbol ",i)]]$eod_MSPE <- colMeans(mspe_df_train[[paste0("symbol ",i)]]$y_eod_minus_yhat_eod_squared)*100
+  
+}
+
+umspe_fda <- unlist(mspe_fda)
+umspe_full <- unlist(mspe_full)
+umspe_eod <- unlist(mspe_eod)
+
+tibble(
+  FFM = c(umspe_fda),
+  SLM = c(umspe_eod),
+  FSLM = c(umspe_full),
+  cat = factor(r_tickers, levels = rev(r_tickers))
+) -> mspe_for_figure
+
+melt_mspe <- melt(na.omit(mspe_for_figure))
+
+plot51 <- ggplot(melt_mspe, aes(value, cat, shape = factor(variable)))
+
+plot511 <- plot51 + geom_point(aes(color = factor(variable))) 
+
+plot5111 <- plot511 + scale_color_manual(values= c("FFM" = "skyblue2", "SLM" = "orange1", "FSLM" = "green4")) + 
+  labs(
+    x = "MSPE", y = NULL)
+
+plot51111 <- plot5111 + scale_shape_manual(values = c("FFM" = 19, "SLM" = 16, "FSLM" = 8))
+
+plot5 <- plot51111 + theme_bw() + 
+  theme(legend.position = c(.9,.8875), legend.title = element_blank(), legend.text=element_text(size=12), axis.title = element_text(size = 12),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(size=0.1, color="gray80"),
+        panel.grid.minor.x = element_line(size=0.1, color="gray80")
+  )
+
+plot5
+
+mean_mspe <- tibble(
+  FFM = c(na.omit(mspe_for_figure[1])),
+  SLM = c(na.omit(mspe_for_figure[2])),
+  FSLM = c(na.omit(mspe_for_figure[3])),
+)
+
+melt_mean_mspe <- melt(mean_mspe)
+rownames(melt_mean_mspe) <- c("FFM", "SLM", "FSLM")
+
+plot6 <- ggplot(melt_mean_mspe, aes(x = value, y = variable)) + 
+  geom_point(aes(shape=variable, color=variable), size=2)+
+  scale_shape_manual(values=c(3, 16, 17))+
+  scale_color_manual(values=c('#999999','#E69F00', '#56B4E9')) +
+  theme(legend.position="top")
+
+pander(t.test(na.omit(mspe_for_figure[1])-na.omit(mspe_for_figure[2])))
+pander(t.test(na.omit(mspe_for_figure[1])-na.omit(mspe_for_figure[3])))
+pander(t.test(na.omit(mspe_for_figure[2])-na.omit(mspe_for_figure[3])))
